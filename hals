@@ -1,0 +1,352 @@
+{/* {features ||masseges} */ }
+{
+    massseges.length > 0 ? (
+        <View></View>
+    ) : (
+        <Features />
+    )
+}
+
+
+,
+<View key={ index } style = { styles.messageContainer } >
+    <Text style={ styles.messageText }>
+        { message.content }
+        </Text>
+
+
+
+const {
+    GoogleGenerativeAI,
+    HarmCategory,
+    HarmBlockThreshold,
+} = require("@google/generative-ai");
+
+const apiKey = process.env.GEMINI_API_KEY;
+const genAI = new GoogleGenerativeAI(apiKey);
+
+const model = genAI.getGenerativeModel({
+    model: "gemini-exp-1121",
+});
+
+const generationConfig = {
+    temperature: 1,
+    topP: 0.95,
+    topK: 64,
+    maxOutputTokens: 8192,
+    responseMimeType: "text/plain",
+};
+
+async function run() {
+    const chatSession = model.startChat({
+        generationConfig,
+        history: [
+        ],
+    });
+
+    const result = await chatSession.sendMessage("INSERT_INPUT_HERE");
+    console.log(result.response.text());
+}
+
+run()
+import axios from 'axios';
+const { apiKey } = require("../constans");
+
+const client = axios.create({
+    headers: {
+        "Authorization": `Bearer ${apiKey}`, // Fixed Authorization header format
+        "Content-Type": "application/json"
+    }
+});
+
+const chatGptEndpoint = 'https://api.openai.com/v1/chat/completions';
+const dalleEndpoint = 'https://api.openai.com/v1/images/generations';
+
+export const apiCall = async (prompt, messages, retries = 3) => {
+    try {
+        const response = await client.post(chatGptEndpoint, {
+            model: 'gpt-3.5-turbo',
+            messages: [{ // Fixed 'massege' to 'messages'
+                role: 'user',
+                content: `Does this message want to generate an AI picture, image, art, or anything similar? ${prompt}. Simply answer with a yes or no.`
+            }]
+        });
+
+        console.log('data:', response.data); // Corrected the variable name to 'response'
+
+        // Return the response from the API
+        return response.data;
+
+    } catch (err) {
+        console.log('error:', err);
+
+        // Retry mechanism for rate-limiting (status code 429)
+        if (err.response && err.response.status === 429 && retries > 0) {
+            console.log(`Rate limit reached. Retrying... (${retries} attempts left)`);
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for 1 second before retry
+            return apiCall(prompt, messages, retries - 1); // Retry the request
+        }
+
+        // Return the error message
+        return { success: false, msg: err.message };
+    }
+};
+
+
+import React, { useEffect, useState } from 'react';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+
+import Features from '../components/features';
+import { dummyMasseges } from '../constans';
+
+export default function HomeScreen() {
+    const [massseges, setMassseges] = useState(dummyMasseges);
+    const [recording, setRecording] = useState(false);
+    const [speaking, setSpeaking] = useState(true);
+
+
+    const clear = () => {
+        setMassseges({});
+    }
+    const StartRecording = () => {
+        setMassseges({});
+    }
+    const StopRecording = () => {
+        setMassseges({});
+    }
+    const stopSpeaking = () => {
+        setSpeaking(false);
+    }
+
+    return (
+        <View style= { styles.container } >
+        <SafeAreaView style={ styles.safeArea }>
+            <View style={ styles.logoContainer }>
+                <Image source={ require('../../assets/bot_logo.png') } style = { styles.logo } />
+                    </View>
+
+    {/* Conditional rendering based on messages */ }
+    {
+        massseges.length > 0 ? (
+            <View style= { styles.messagesContainer } >
+            <Text style={ styles.assistantLabel }> Assistant </Text>
+                < View style = { styles.chatContainer } >
+                    <ScrollView
+                                bounces={ false }
+        style = { styles.scrollView }
+        showsHorizontalScrollIndicator = { false}
+            >
+        {
+            massseges.map((message, index) => {
+                if (message.role === 'assistant') {
+                    if (message.content.includes('https')) {
+                        // Assuming the message contains an image URL
+                        return (
+                            <View key= { index } style = { styles.imageContainer } >
+                                <View style={ styles.imageMessageContainer }>
+                                    <Image
+                                                            source={ { uri: message.content } }
+                        style = { styles.imageMessage }
+                        resizeMode = "contain"
+                            />
+                            </View>
+
+                            </View>
+                                            );
+        } else {
+            // Text response from the assistant
+            return (
+                <View key= { index } style = { styles.textMessageContainer } >
+                    <Text>{ message.content } </Text>
+                    </View>
+                                            );
+        }
+    } else {
+        // User input
+        return (
+            <View key= { index } style = { styles.userMessageContainer } >
+                <View style={ styles.userMessage }>
+                    <Text>{ message.content } </Text>
+                    </View>
+                    </View>
+                                        );
+    }
+})}
+</ScrollView>
+    </View>
+    </View>
+                ) : (
+    <Features />
+)}
+<View style={ styles.miccontainer }>
+    {
+        recording?(
+                            <TouchableOpacity onPress = { StopRecording } >
+                <Image source={ require('../../assets/recording-icon.gif')} style = { styles.recicon } />
+                    </TouchableOpacity>
+                        ) : (
+
+    <TouchableOpacity on onPress = { StartRecording } >
+        <Image source={ require('../../assets/mic.png') } style = { styles.recicon } />
+            </TouchableOpacity>
+                        )
+                    }
+{
+    massseges.length > 0 && (
+        <TouchableOpacity onPress={ clear } style = { styles.clearbut } >
+            <Text>Clear </Text>
+            </TouchableOpacity>
+                        )
+}
+{
+    speaking && (
+        <TouchableOpacity onPress={ stopSpeaking } style = { styles.rectext } >
+            <Text>Stop </Text>
+            </TouchableOpacity>
+                        )
+}
+</View>
+    </SafeAreaView>
+    </View>
+    );
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#ffffff',
+    },
+    safeArea: {
+        flex: 1,
+        marginHorizontal: 20,
+    },
+    logoContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+    },
+    logo: {
+        height: hp(15),
+        width: hp(15),
+        left: 15,
+    },
+    messagesContainer: {
+        flex: 1,
+        justifyContent: 'flex-start',
+        marginBottom: 50,
+        fontSize: 18,
+    },
+    assistantLabel: {
+        fontSize: wp(5),
+        color: '#4B5563',
+        fontWeight: 'semibold',
+        marginLeft: 4,
+    },
+    chatContainer: {
+        height: hp(58),
+        backgroundColor: '#F3F4F6',
+        borderRadius: 24,
+        padding: 16,
+    },
+    scrollView: {
+        marginBottom: 10,
+    },
+    textMessageContainer: {
+        padding: 10,
+        backgroundColor: '#D1FAE5',
+        borderRadius: 20,
+        borderTopLeftRadius: 0,
+        width: wp(70),
+        marginBottom: 20,
+    },
+    userMessageContainer: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+    },
+    userMessage: {
+        padding: 10,
+        backgroundColor: '#ffffff',
+        borderRadius: 20,
+        borderTopRightRadius: 0,
+        width: wp(70),
+        marginBottom: 10,
+    },
+    imageMessageContainer: {
+
+        backgroundColor: '#D1FAE5',
+        borderRadius: 16,
+        borderTopLeftRadius: 0,
+        height: wp(70),
+        marginBottom: 20,
+    },
+    imageMessage: {
+        width: wp(70),
+        height: wp(70),
+        borderRadius: 16,
+        objectFit: 'cover',
+        padding: 10,
+    },
+    imageContainer: {
+        flexDirection: 'row',
+        justifyContent: 'flex-start',
+    },
+    miccontainer: {
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingBottom: 10
+    },
+    recicon: {
+        width: hp(8),
+        height: hp(8),
+        borderRadius: 9999
+    },
+    clearbut: {
+        backgroundColor: '#A3A3A3',
+        borderRadius: 24,
+        padding: 8,
+        position: 'absolute',
+        right: 40,
+    },
+    rectext: {
+        backgroundColor: '#F87171',
+        borderRadius: 24,
+        padding: 8,
+        position: 'absolute',
+        left: 40,
+    }
+
+});
+// Initialize voice recognition
+// useEffect(() => {
+//     Voice.onSpeechResults = (event) => {
+//         setRecognizedText(event.value[0]);
+//     };
+//     return () => {
+//         Voice.destroy().then(Voice.removeAllListeners);
+//     };
+// }, []);
+
+const startListening = async () => {
+    setRecognizedText('');
+    setIsListening(true);
+    try {
+        // await Voice.start('en-US');
+    } catch (e) {
+        console.error(e);
+    }
+};
+
+const stopListening = async () => {
+    setIsListening(false);
+    try {
+        // await Voice.stop();
+    } catch (e) {
+        console.error(e);
+    }
+};
+
+const speakText = (text) => {
+    Speech.speak(text);
+};
